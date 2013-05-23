@@ -361,7 +361,8 @@ server.http.start = function(config){
 			res.end('Please fill out all fields.\n');
 		}
 	});
-	app.listen(config.server.port, config.server.host);
+//	app.listen(config.server.port, config.server.host);
+	app.listen(config.server.port);
 };
 server.start = function(config){
 	// If config exists, use it, else use default.
