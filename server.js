@@ -8,9 +8,9 @@ MemoryStore = require('connect').session.MemoryStore,
 app = express(),
 fs = require('fs'),
 mime = require('mime'),
-encode = require('./encode.js').encode,
-User = require('./user.js').User,
-Plugins = require('./plugins.js').Plugins;
+encode = require('./encode.js'),
+User = require('./user.js'),
+Plugins = require('./plugins.js');
 var server = {};
 var db = require('mongojs');
 server.http = {};
@@ -22,14 +22,16 @@ server.http.getBootcode = function(res){
 			console.log('[404] Could not find bootcode!');
 			return;
 		}
-		fs.readFile(filename, 'binary', function(err, file) {
-			if(err) {
-				res.type('text/plain');
-				res.send(500, err + '\n');
-			}
-            var type = mime.lookup(filename);
-            res.type(type);
-            res.send(file);
+		fs.stat(filename, function(error, stat){
+			fs.readFile(filename, 'binary', function(err, file) {
+				if(err) {
+					res.type('text/plain');
+					res.send(500, err + '\n');
+				}
+				var type = mime.lookup(filename);
+				res.contentType(type);
+				res.send(file);
+			});
 		});
 	});
 };
@@ -105,7 +107,7 @@ server.http.start = function(config){
 		var isLoggedIn = function(){return req.session && req.session.user;};
 		if(!isLoggedIn()){
 			res.status(500);
-			res.end();
+			res.end('You are not logged in!');
 			return;
 		}
 		var loggedinFunc = function(res){
@@ -130,7 +132,7 @@ server.http.start = function(config){
 		var isLoggedIn = function(){return req.session && req.session.user;};
 		if(!isLoggedIn()){
 			res.status(500);
-			res.end();
+			res.end('You are not logged in!');
 			return;
 		}
 		res.render('rabbit', {
@@ -142,7 +144,8 @@ server.http.start = function(config){
 		var post = req.body;
 		res.status(200);
 		if(!req.session || !req.session.user){
-			res.end('Your not logged in!');
+			res.status(500);
+			res.end('You are not logged in!');
 			return;
 		}
 		if(!post){
@@ -177,6 +180,8 @@ server.http.start = function(config){
 			res.set('Location', '/');
 		}else{
 			res.status(500);
+			res.end('You are not logged in!');
+			return;
 		}
 		res.end();
 	});
@@ -195,7 +200,8 @@ server.http.start = function(config){
 		if(post){
 			var result = {};
 			if(!req.session || !req.session.user){
-				res.end('Your not logged in!');
+				res.status(500);
+				res.end('You are not logged in!');
 				return;
 			}
 			if(req.session && req.session.user && req.session.user.rabbits[0] && post.sn && req.session.user.rabbits[0].sn !== post.sn){
@@ -230,7 +236,8 @@ server.http.start = function(config){
 		if(post){
 			var result = {};
 			if(!req.session || !req.session.user){
-				res.end('Your not logged in!');
+				res.status(500);
+				res.end('You are not logged in!');
 				return;
 			}
 			if(req.session && req.session.user && req.session.user.rabbits[0] && post.sn && req.session.user.rabbits[0].sn !== post.sn){
@@ -361,7 +368,6 @@ server.http.start = function(config){
 			res.end('Please fill out all fields.\n');
 		}
 	});
-//	app.listen(config.server.port, config.server.host);
 	app.listen(config.server.port);
 };
 server.start = function(config){
@@ -390,4 +396,4 @@ server.start = function(config){
 	Plugins = exports.Plugins = new Plugins(this);
 	Plugins.load(config.plugins);
 };
-exports.server = server;
+module.exports = server;
